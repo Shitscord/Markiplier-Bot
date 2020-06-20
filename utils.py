@@ -6,7 +6,6 @@ import random
 import re
 import youtube_dl
 from async_timeout import timeout
-from keys import *
 
 def get_random_link():
     return random.choice(mark_list)
