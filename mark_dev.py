@@ -15,15 +15,6 @@ import time
 songs = asyncio.Queue()
 play_next_song = asyncio.Event()
 
-def add_clients(TOKEN):
-    clients = []
-    for token in TOKEN:
-        client = commands.Bot(command_prefix = ".")
-        dec_client(client)
-        clients.append(client.start(token))
-
-    return clients
-
 def dec_client(client):
     @client.command(pass_context=True)
     async def join(ctx):
@@ -56,6 +47,17 @@ def dec_client(client):
         voice = get(client.voice_clients, guild=ctx.guild)
         voice.pause()
 
+    @client.command(pass_content=True)
+    async def spam(ctx, member):
+        member = int(member.replace('<@!', "").replace('>', ""))
+        print(member)
+        # members = guild.members
+        # rand = random.choice(members)
+        rand = client.get_user(member)
+        dm_channel = await rand.create_dm()
+        rand_cont = random.choice(ha)
+        await dm_channel.send(rand_cont)
+
     @client.event
     async def on_message(message, *args):
 
@@ -73,11 +75,15 @@ def dec_client(client):
                 await voice.disconnect()
 
         content = str(message.content)
-        print(content)
+        if re.search('kyle', content, re.IGNORECASE):
+            print("Sending kyle pic...")
+            dm = await message.author.create_dm()
+            await dm.send(random.choice(kyle_links))
+
 
         url = get_fnaf_link(content)
         voice = await play(url, channel, ctx)
-        #await queue_songs(url, voice)
+
         print(url)
 
     def toggle_next():
@@ -93,10 +99,7 @@ def dec_client(client):
             scr = await get_url(mark_list[i+init_url+1])
             await songs.put(voice.play(scr, after= toggle_next()))
 
-
-
     async def play(scr, channel, ctx):
-
         if scr != None:
             try:
                 voice = await channel.connect()
@@ -105,11 +108,36 @@ def dec_client(client):
                 voice.stop()
 
             url = await get_url(scr)
-            scr = discord.FFmpegPCMAudio(url)
-            voice.play(scr, after= toggle_next())
-        else:
-            return ('Failed...')
-        return voice
+            if url == None:
+                channel = ctx.message.channel
+                await channel.send('I can\'t play fnaf right now')
+            else:
+                scr = discord.FFmpegPCMAudio(url)
+
+                try:
+                    voice.play(scr)
+                except:
+                    await channel.connect()
+
+    @client.command(pass_context=True)
+    async def check_perm(ctx, guild_id: int):
+        if ctx.message.channel.type == ChannelType.private:
+            guild = client.get_guild(guild_id)
+            channels = guild.channels
+            user_id = ctx.message.author.id
+            user = guild.get_member(user_id)
+
+            dm = ctx.message.channel
+
+            all_access = True
+            for channel in channels:
+                perm = user.permissions_in(channel)
+                if perm.view_channel != True:
+                    all_access = False
+                    await dm.send("You are not able to view " + str(channel.name))
+
+            if all_access:
+                await dm.send("You have access to all channels")
 
     async def audio_player_task():
         while True:
@@ -120,13 +148,12 @@ def dec_client(client):
 
     @client.event
     async def on_ready():
-        print("cummy FUCK")
+        print("I'm ready!")
 
 run_clients = add_clients(TOKEN)
 
 loop = asyncio.get_event_loop()
 
-for i, token in enumerate(TOKEN):
-    loop.run_until_complete( asyncio.wait(run_clients) )
+loop.run_until_complete( asyncio.wait(run_clients) )
 
-#loop.run_forever()
+#markiplier .shit

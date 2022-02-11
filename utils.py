@@ -6,10 +6,30 @@ import random
 import re
 import youtube_dl
 from async_timeout import timeout
-from keys import *
+import discord
+import youtube_dl
+from discord.ext import commands
+from discord import FFmpegPCMAudio
+from discord.utils import get
+from multiprocessing import Process
+import copy
+import time
+from youtubesearchpython import VideosSearch
+
+def getSearch(word):
+    videosSearch = VideosSearch(word, limit=2)
+    re = videosSearch.result()
+    link = re['result'][0]['link']
+    print(link)
+    return link
 
 def get_random_link():
     return random.choice(mark_list)
+
+
+banned_users = [199963322722811904, 420700764223307776, ]
+
+ha = ['greetings IDIOT', 'you suck', 'get away from me']
 
 mark = {('fnaf 1',): {'part 1': 'https://www.youtube.com/watch?v=iOztnsBPrAA&list=PL3tRBEVW0hiDL09lO0xjKEix84OY27xet&index=2&t=0s',
                    'part 2': 'https://www.youtube.com/watch?v=YT1NhLTwwEg&list=PL3tRBEVW0hiDL09lO0xjKEix84OY27xet&index=3&t=860s',
@@ -47,23 +67,27 @@ other = {
 
         'random': {('fnaf', 'markiplier') : get_random_link},
 
-        'music': {('femmcumming',): 'https://www.youtube.com/watch?v=MwooEU7gn7w', #Bonnie's lullaby
+        'music': {
                   ('fix',): 'https://www.youtube.com/watch?v=kXMwZNRiPe0',         #I can't fix you
-                  ('michael', '@!420700764223307776', 'mike'): 'https://www.youtube.com/watch?v=Bk_z96dHSPw', #Hallway ambience
+                  ('michael', '420700764223307776', 'mike', '420700764223307776'): 'https://www.youtube.com/watch?v=Bk_z96dHSPw', #Hallway ambience
                   ('bad',): 'https://www.youtube.com/watch?v=EG757bPPXZQ', #Bad ending
                   ('sissy',): 'https://www.youtube.com/watch?v=598IirIr3rU', #BO1 Monkey
-                  ('bite','cum'): 'https://www.youtube.com/watch?v=rLeQSd7R-jU', #Join us for a bite
+                  ('bite',): 'https://www.youtube.com/watch?v=rLeQSd7R-jU', #Join us for a bite
                   ('sad',): 'https://www.youtube.com/watch?v=cfCRpxklSMQ',
-                  ('nigga','nigger'): 'https://www.youtube.com/watch?v=Xb-fH9jLacE'},
-
-
+                  ('nae',): 'https://www.youtube.com/watch?v=Xb-fH9jLacE'},
 
         'secret': {('chris',): 'https://www.youtube.com/watch?v=lB2r78KIdsQ',
                    ('brap','fem'): 'https://www.youtube.com/watch?v=fYVLdEKYY2c', #Brap sound
                    ('nightmare',): 'https://www.youtube.com/watch?v=h4JyR7erePw',
-                   ('scream', 'scary', 'you won\'t die', 'you wont die'): 'https://www.youtube.com/watch?v=eKyQEbR9tCI'}
+                   ('scream', 'scary',): 'https://www.youtube.com/watch?v=eKyQEbR9tCI',
+                   ('rap',): 'https://www.youtube.com/watch?v=kuq2fuK8bOg',
+                   ('white people',): 'https://youtu.be/3teJr1WG2RQ'}
 
         }
+
+kyle_links = [
+    'https://tenor.com/view/kyle-edgar-astolfo-brap-selfie-guy-gif-17575797',
+    'https://tenor.com/view/kyle-edgar-astolfo-shake-selfie-gif-16973193']
 
 def to_list(dict):
     items = []
@@ -75,7 +99,7 @@ def to_list(dict):
 def get_max_channel(guild):
     channels = guild.voice_channels
 
-    maxi = [0, None]
+    maxi = [0, random.choice(channels)]
     for channel in channels:
         if len(channel.members) > maxi[0]:
             maxi[0] = len(channel.members)
@@ -99,6 +123,7 @@ YTDL_OPTIONS = {
     'no_warnings': True,
     'default_search': 'auto',
     'source_address': '0.0.0.0',
+    "cookiefile": "cookies.txt"
 }
 
 FFMPEG_OPTIONS = {
@@ -131,10 +156,17 @@ async def get_url(search: str, *, loop: asyncio.BaseEventLoop = None):
 
     webpage_url = process_info['webpage_url']
     partial = functools.partial(ytdl.extract_info, webpage_url, download=False)
-    processed_info = await loop.run_in_executor(None, partial)
+
+    try:
+        processed_info = await loop.run_in_executor(None, partial)
+    except:
+        print('Failed to get url...')
+        return None
 
     if processed_info is None:
-        raise YTDLError('Couldn\'t fetch `{}`'.format(webpage_url))
+        print('Failed to get url...')
+        return None
+            #YTDLError('Couldn\'t fetch `{}`'.format(webpage_url))
 
     if 'entries' not in processed_info:
         info = processed_info
