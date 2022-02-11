@@ -11,6 +11,7 @@ from multiprocessing import Process
 import asyncio
 import copy
 import time
+from keys import TOKEN
 
 songs = asyncio.Queue()
 play_next_song = asyncio.Event()
